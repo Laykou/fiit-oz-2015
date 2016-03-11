@@ -21,7 +21,8 @@ end
 def sanitize(key, text)
 	text ||= ''
 
-	return text.split('/').collect(&:strip) if key == 'helpfulness'
+	return text.split('/').collect(&:strip).collect(&:to_f) if key == 'helpfulness'
+	return text.to_f if key == 'score'
 	text = Sanitize.clean(text) if key == 'text' ||  key == 'summary'
 
 	text.strip
@@ -57,7 +58,7 @@ lines.each do |line|
 
 		key = e[0].split('/')[1]
 
-		if !["productId", "userId", "profileName", "helpfulness", "score", "time", "summary"].include?(key)
+		if !["productId", "userId", "profileName", "helpfulness", "score", "time", "summary", "text"].include?(key)
 			review[review.keys.last] += ' ' + sanitize(review.keys.last, line)
 			next
 		end
