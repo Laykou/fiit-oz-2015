@@ -1,11 +1,18 @@
 require 'elasticsearch'
 require 'ruby-progressbar'
 require 'sanitize'
+require 'active_record'
+
+ActiveRecord::Base.establish_connection(adapter: 'postgresql', host: 'localhost', port: 5432, user: 'postgres', 'password': 'postgres', database: 'oz')
+
+class Review < ActiveRecord::Base
+  self.primary_key = 'id'
+end
 
 BULK_SIZE = 20000
 
-@client = Elasticsearch::Client.new host: 'localhost:9200'
 lines = File.open("movies.txt").each_line
+columns = ['product_id', 'user_id', 'profile_name', 'helpfullness_1', 'helpfullness_2', 'score', 'time', 'summary', 'text']
 @bulk = []
 
 def parse_review_line(line)
@@ -28,11 +35,15 @@ def sanitize(key, text)
 	text.strip
 end
 
+def insert(values)
+	Book.import columns, values, :validate => false
+end
+
 def put_review(rev)
-	@bulk << rev
+	@bulk << rev.values.flatten
 
 	if(@bulk.length >= BULK_SIZE)
-		@client.bulk body: @bulk
+		insert @bulk
 		@bulk = []
 	end
 end
@@ -64,9 +75,6 @@ lines.each do |line|
 		end
 
 		if key == 'productId' && !review.empty?
-			# puts "----"
-			# puts review.inspect
-
 			req = { index: {_index: 'reviews', _type: 'review', data: review} }
 
 			put_review req     
@@ -78,14 +86,11 @@ lines.each do |line|
 		end
 
 		review[key] = sanitize(key, e[1])
-
-		#	rescue ArgumentError
-		#		puts "Skipped " + lines.inspect
 	end
 end
 
 if(@bulk.length > 0)
-	@client.bulk body: @bulk
+	insert @bulk
 	@bulk = []
 end
 
