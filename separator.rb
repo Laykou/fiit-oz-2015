@@ -15,3 +15,23 @@ records_array.each do |rec|
 		f.write(rec["text"])
 		f.close
 end 
+
+# LIMIT = 1000
+# page = 0
+
+# while true do
+#     sql = "SELECT id,score, text FROM reviews ORDER BY id LIMIT #{LIMIT} OFFSET #{LIMIT * page}"
+#     records_array = ActiveRecord::Base.connection.execute(sql)
+
+#     if records_array.empty?
+#         break;
+#     end
+
+#     records_array.each do |rec| 
+#         f = File.new "#{dir_paths[rec["score"]]}/#{rec["id"]}.txt", 'w'
+#         f.write(rec["text"])
+#         f.close
+#     end
+
+#     page += 1
+# end
